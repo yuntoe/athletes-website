@@ -1,50 +1,48 @@
-// Simulated data for now – we'll later fetch this from Supabase
-const competitionEvents = {
-  0: [ // National Schools
-    { event: "100m", ageGroup: "U18", round: "Preliminary" },
-    { event: "200m", ageGroup: "U18", round: "Final" },
-    { event: "4x100m Relay", ageGroup: "U20", round: "Final" }
-  ],
-  1: [ // IVP
-    { event: "100m", ageGroup: "Senior", round: "Heats" },
-    { event: "100m", ageGroup: "Senior", round: "Final" },
-    { event: "400m", ageGroup: "Senior", round: "Final" }
-  ],
-  2: [ // Singapore Open
-    { event: "Long Jump", ageGroup: "U20", round: "Final" },
-    { event: "Triple Jump", ageGroup: "Senior", round: "Final" }
-  ]
-};
+import { supabase } from "./supabase.js";
 
-const compNames = {
-  0: "National Schools Championships",
-  1: "IVP Track & Field Series",
-  2: "Singapore Open"
-};
+const params = new URLSearchParams(window.location.search);
+const competitionId = params.get("id");
+const compTitle = document.querySelector("#competitionTitle");
+const tableBody = document.querySelector("#eventRoundsTable tbody");
 
-const urlParams = new URLSearchParams(window.location.search);
-const compId = parseInt(urlParams.get("id"));
-const eventList = competitionEvents[compId] || [];
-const tableBody = document.querySelector("#eventsTable tbody");
-const compNameHeading = document.getElementById("compName");
+async function loadCompetitionDetails() {
+  const { data: competition, error: compErr } = await supabase
+    .from("competitions")
+    .select("name")
+    .eq("id", competitionId)
+    .single();
 
-compNameHeading.textContent = compNames[compId] || "Competition Details";
-renderEventList(eventList);
-
-function renderEventList(events) {
-  tableBody.innerHTML = "";
-  if (events.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="3">No events found.</td></tr>`;
+  if (compErr) {
+    compTitle.textContent = "Competition not found";
     return;
   }
 
-  events.forEach(e => {
+  compTitle.textContent = competition.name;
+
+  const { data: rounds, error } = await supabase
+    .from("rounds")
+    .select("id, round_name, event_id, events (name, age_group)")
+    .eq("competition_id", competitionId)
+    .order("round_name", { ascending: true });
+
+  if (error || !rounds.length) {
+    tableBody.innerHTML = `<tr><td colspan="3">No event rounds found.</td></tr>`;
+    return;
+  }
+
+  rounds.forEach(r => {
     const row = document.createElement("tr");
+    row.style.cursor = "pointer";
+    row.onclick = () => {
+      window.location.href = `event-results.html?id=${r.id}`;
+    };
     row.innerHTML = `
-      <td>${e.event}</td>
-      <td>${e.ageGroup}</td>
-      <td>${e.round}</td>
+      <td>${r.events.name}</td>
+      <td>${r.events.age_group}</td>
+      <td>${r.round_name}</td>
     `;
     tableBody.appendChild(row);
   });
 }
+
+loadCompetitionDetails();

@@ -14,11 +14,18 @@
         <nav>
             <a href="../index.html">Home</a>
             <a href="athlete.html">Athletes</a>
+            <a href="competitions.html">Competitions</a>
+            <a href="rankings.html">Rankings</a>
         </nav>
     </header>
 
+
     <main>
+
+
         <section>
+            <p><button onclick="history.back()">← Back</button></p>
+                
             <h2 id="athleteName">Athlete Profile</h2>
             <p><strong>Age:</strong> <span id="athleteAge"></span></p>
             <p><strong>Gender:</strong> <span id="athleteGender"></span></p>
@@ -60,16 +67,19 @@
                     <tr>
                         <th>Event</th>
                         <th>Result (Wind)</th>
+                        <th>Round</th>
                         <th>Competition</th>
+                        <th>Year</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </section>
 
+
     </main>
 
-    <script src="../js/athlete-profile.js"></script>
+    <script type="module" src="../js/athlete-profile.js"></script>
 </body>
 
 </html>

@@ -1,76 +1,142 @@
-// Sample dataset – eventually this will come from Supabase
-const athleteData = [
-  {
-    name: "Alice Tan",
-    yearOfBirth: 2006,
-    gender: "Female",
-    results: [
-      { event: "100m", result: "12.00s", wind: "+1.9", competition: "National U18", year: 2025 },
-      { event: "100m", result: "11.92s", wind: "+2.5", competition: "Singapore Open", year: 2025 },
-      { event: "100m", result: "12.11s", wind: "+0.5", competition: "IVP", year: 2024 },
-      { event: "200m", result: "25.50s", wind: "+1.8", competition: "IVP", year: 2025 },
-      { event: "200m", result: "25.20s", wind: "+2.3", competition: "Singapore Open", year: 2025 },
-      { event: "Long Jump", result: "5.45m", wind: "+1.5", competition: "Youth Games", year: 2023 }
-    ]
-  }
-];
+import { supabase } from "./supabase.js";
+
+const urlParams = new URLSearchParams(window.location.search);
+const athleteId = urlParams.get("id");
 
 const windSensitiveEvents = ["100m", "200m", "100m Hurdles", "110m Hurdles", "Long Jump", "Triple Jump"];
 
-const urlParams = new URLSearchParams(window.location.search);
-const athleteId = parseInt(urlParams.get("id"));
-const athlete = athleteData[athleteId];
+function calculateAge(yearOfBirth) {
+  return new Date().getFullYear() - yearOfBirth;
+}
 
-if (athlete) {
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - athlete.yearOfBirth;
-  const ageGroup = age < 18 ? "U18" : age < 20 ? "U20" : "Senior";
+function getAgeGroup(age) {
+  if (age < 18) return "U18";
+  if (age < 20) return "U20";
+  return "Senior";
+}
+
+function isLegalWind(event, wind) {
+  if (!windSensitiveEvents.includes(event)) return true;
+  const val = parseFloat(wind);
+  return !isNaN(val) && val <= 2.0;
+}
+
+function isNumericResult(result) {
+  return /^\d+(\.\d+)?[sm]$/.test(result); // e.g. "12.00s", "5.44m"
+}
+
+function formatResultWithWind(result, wind) {
+  return wind ? `${result} (${wind} m/s)` : result;
+}
+
+function renderResults(tableId, results, includeRound = false) {
+  const tableBody = document.querySelector(`#${tableId} tbody`);
+  tableBody.innerHTML = "";
+
+  if (!results.length) {
+    tableBody.innerHTML = `<tr><td colspan="${includeRound ? 5 : 3}">No results available.</td></tr>`;
+    return;
+  }
+
+  results.forEach((r) => {
+    const row = document.createElement("tr");
+    row.innerHTML = includeRound
+      ? `
+        <td>${r.event_name}</td>
+        <td>${formatResultWithWind(r.result, r.wind)}</td>
+        <td>${r.round}</td>
+        <td>${r.competition_name}</td>
+        <td>${r.year}</td>
+      `
+      : `
+        <td>${r.event_name}</td>
+        <td>${formatResultWithWind(r.result, r.wind)}</td>
+        <td>${r.competition_name}</td>
+      `;
+    tableBody.appendChild(row);
+  });
+}
+
+
+async function loadAthleteProfile() {
+  // Load athlete
+  const { data: athlete, error } = await supabase
+    .from("athletes")
+    .select("*")
+    .eq("id", athleteId)
+    .single();
+
+  if (error || !athlete) {
+    document.getElementById("athleteName").textContent = "Athlete not found";
+    return;
+  }
+
+  const age = calculateAge(athlete.year_of_birth);
+  const ageGroup = getAgeGroup(age);
 
   document.getElementById("athleteName").textContent = athlete.name;
   document.getElementById("athleteAge").textContent = age;
   document.getElementById("athleteGender").textContent = athlete.gender;
   document.getElementById("athleteAgeGroup").textContent = ageGroup;
 
-  renderResults("pbTable", getBestResults(athlete.results, true));
-  renderResults("sbTable", getBestResults(athlete.results.filter(r => r.year === currentYear), true));
-  renderResults("allResultsTable", athlete.results, false);
-}
+  // Load results (joined with event + competition)
+  const { data: results, error: resultsError } = await supabase
+    .from("results")
+    .select(`
+      id,
+      result,
+      wind,
+      year,
+      rounds (
+        round_name,
+        events ( name ),
+        competitions ( name )
+      )
+    `)
+    .eq("athlete_id", athleteId);
 
-// Returns best legal result per event
-function getBestResults(results, enforceWindLegal) {
-  const bestByEvent = {};
-
-  results.forEach(r => {
-    const windVal = parseFloat(r.wind);
-    const isLegal = !windSensitiveEvents.includes(r.event) || windVal <= 2.0;
-
-    if (enforceWindLegal && !isLegal) return;
-
-    if (!bestByEvent[r.event] || r.result < bestByEvent[r.event].result) {
-      bestByEvent[r.event] = r;
-    }
-  });
-
-  return Object.values(bestByEvent);
-}
-
-// Render a result table
-function renderResults(tableId, results, enforceWind = false) {
-  const tableBody = document.querySelector(`#${tableId} tbody`);
-  tableBody.innerHTML = "";
-
-  if (!results.length) {
-    tableBody.innerHTML = `<tr><td colspan="3">No results available.</td></tr>`;
+  if (resultsError) {
+    console.error("Error loading results:", resultsError.message);
     return;
   }
 
-  results.forEach(r => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${r.event}</td>
-      <td>${r.result} (${r.wind} m/s)</td>
-      <td>${r.competition}</td>
-    `;
-    tableBody.appendChild(row);
+  // Format and flatten
+  const formatted = results.map(r => ({
+    result: r.result,
+    wind: r.wind,
+    year: r.year,
+    round: r.rounds?.round_name,
+    event_name: r.rounds?.events?.name || "-",
+    competition_name: r.rounds?.competitions?.name || "-"
+  }));
+
+  const currentYear = new Date().getFullYear();
+
+  // Personal Best: best numeric + legal per event
+  const pbByEvent = {};
+  formatted.forEach(r => {
+    if (!isNumericResult(r.result)) return;
+    if (!isLegalWind(r.event_name, r.wind)) return;
+    if (!pbByEvent[r.event_name] || parseFloat(r.result) < parseFloat(pbByEvent[r.event_name].result)) {
+      pbByEvent[r.event_name] = r;
+    }
   });
+
+  // Season Best: best this year, numeric + legal
+  const sbByEvent = {};
+  formatted.forEach(r => {
+    if (r.year !== currentYear) return;
+    if (!isNumericResult(r.result)) return;
+    if (!isLegalWind(r.event_name, r.wind)) return;
+    if (!sbByEvent[r.event_name] || parseFloat(r.result) < parseFloat(sbByEvent[r.event_name].result)) {
+      sbByEvent[r.event_name] = r;
+    }
+  });
+
+  // Render
+  renderResults("pbTable", Object.values(pbByEvent));
+  renderResults("sbTable", Object.values(sbByEvent));
+  renderResults("allResultsTable", formatted, true);
 }
+
+loadAthleteProfile();

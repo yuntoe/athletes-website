@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Results</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+</head>
+
+<body>
+    <header>
+        <h1>SG Athletes Database</h1>
+        <nav>
+            <a href="../index.html">Home</a>
+            <a href="./athlete.html">Athletes</a>
+            <a href="./competitions.html">Competitions</a>
+            <a href="./rankings.html">Rankings</a>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h2 id="eventName">Event Name</h2>
+            <h3 id="roundName">Round</h3>
+            <div id="heatsContainer"></div>
+            <h3>Overall Standings</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Gender</th>
+                        <th>Result (Wind)</th>
+                        <th>Age</th>
+                        <th>Competition</th>
+                    </tr>
+                </thead>
+                <tbody id="overallStandingsBody"></tbody>
+            </table>
+        </section>
+        <button onclick="history.back()">← Back</button>
+    </main>
+
+    <script src="../js/event-results.js"></script>
+</body>
+
+</html>

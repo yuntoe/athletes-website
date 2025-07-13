@@ -1,3 +1,5 @@
+import { supabase } from "./supabase.js";
+
 const windSensitiveEvents = ["100m", "200m", "110m Hurdles", "100m Hurdles", "Long Jump", "Triple Jump"];
 
 const rankings = [

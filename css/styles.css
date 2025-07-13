@@ -1,3 +1,4 @@
+/* Base styles */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -42,6 +43,7 @@ section {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+/* Search bar (used on athlete list & rankings) */
 .search-bar {
   margin-bottom: 1rem;
 }
@@ -67,9 +69,11 @@ section {
   background-color: #003080;
 }
 
+/* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 2rem;
 }
 
 table thead {
@@ -80,4 +84,9 @@ table th, table td {
   padding: 0.75rem;
   border: 1px solid #ccc;
   text-align: left;
+}
+
+/* Highlight row on hover */
+tr:hover {
+  background-color: #f0f8ff; /* light blue highlight */
 }
