@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Athletes – SG Athletes Database</title>
+  <link rel="stylesheet" href="../css/athlete.css" />
+</head>
+<body>
+  <header>
+    <h1>SG Athletes Database</h1>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a href="athlete.html">Athletes</a>
+      <a href="competitions.html">Competitions</a>
+      <a href="rankings.html">Rankings</a>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>Athletes List</h2>
+
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search by name..." />
+        <button id="searchBtn">Search</button>
+      </div>
+
+      <table id="athleteTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Gender</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Athlete rows will be inserted here -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="../js/athlete.js"></script>
+</body>
+</html>
